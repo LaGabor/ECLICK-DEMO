@@ -13,12 +13,13 @@
 
 1. Környezeti fájl létrehozása:
 
+( vagy csak manuálisan töröld ki a .example részt)
    ```bash
-   cp .env.example .env ( vagy csak manuálisan töröld ki a .example részt)
+   cp .env.example .env
     
    ```
 
-   Docker alatt a `docker-compose.yml` a **backend** szolgáltatásnál felülírja a `DB_HOST`-ot `mysql`-re és a `MAIL_HOST`-ot `mailpit`-re; a `.env`-ben a példa **3308**-as host port a gépről való közvetlen MySQL-eléréshez készült.
+Docker alatt a `docker-compose.yml` a **backend** szolgáltatásnál felülírja a `DB_HOST`-ot `mysql`-re és a `MAIL_HOST`-ot `mailpit`-re; a `.env`-ben a példa **3308**-as host port a gépről való közvetlen MySQL-eléréshez készült.
 
 
 2. **PHP image buildelése** (Csak első indításkor vagy Dockerfile módosítás után szükséges.):
