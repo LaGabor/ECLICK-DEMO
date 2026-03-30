@@ -3,6 +3,9 @@ set -e
 
 cd /var/www/php
 
+# Bind-mounted repo is owned by host UID; avoid git "dubious ownership" when Composer uses VCS.
+git config --global --add safe.directory /var/www/php 2>/dev/null || true
+
 rm -f storage/framework/.docker_migrations_ready
 
 echo "Installing composer dependencies"

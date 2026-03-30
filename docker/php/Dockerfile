@@ -19,7 +19,9 @@ RUN apt-get update && apt-get install -y \
         intl \
         bcmath \
         pcntl \
-        opcache
+        opcache \
+        mbstring \
+        exif
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
