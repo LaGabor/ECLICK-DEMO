@@ -5,12 +5,12 @@ namespace App\Models;
 use App\Notifications\QueuedResetPassword;
 use App\Notifications\QueuedVerifyEmail;
 use App\Support\UserRole;
-use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,19 +21,17 @@ use Spatie\Permission\Traits\HasRoles;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, HasRoles, HasUuids, Notifiable;
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin' && $this->hasRole(UserRole::Admin);
+        return match ($panel->getId()) {
+            'admin' => $this->hasRole(UserRole::Admin),
+            'account' => $this->hasRole(UserRole::User),
+            default => false,
+        };
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -46,6 +44,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function receipts(): HasMany
     {
         return $this->hasMany(Receipt::class);
+    }
+
+    public function refundExportsCreated(): HasMany
+    {
+        return $this->hasMany(RefundExport::class, 'created_by');
+    }
+
+    public function contactMessages(): HasMany
+    {
+        return $this->hasMany(ContactMessage::class);
     }
 
     public function sendEmailVerificationNotification(): void

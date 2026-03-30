@@ -3,6 +3,13 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
+/*
+ * Some PHP builds omit PDO::MYSQL_ATTR_CONNECT_TIMEOUT; the mysqlnd value is 1002.
+ */
+$pdoMysqlConnectTimeoutKey = defined('PDO::MYSQL_ATTR_CONNECT_TIMEOUT')
+    ? constant('PDO::MYSQL_ATTR_CONNECT_TIMEOUT')
+    : 1002;
+
 return [
 
     /*
@@ -16,6 +23,19 @@ return [
     | is explicitly specified when you execute a query / statement.
     |
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | MySQL / MariaDB client connect timeout (seconds)
+    |--------------------------------------------------------------------------
+    |
+    | When the server is down or a firewall drops packets, PDO can otherwise
+    | block for a very long time — Artisan, Composer scripts, and IDEs then
+    | appear to "freeze". This caps wait time on the client.
+    |
+    */
+
+    'connect_timeout_seconds' => (int) env('DB_CONNECT_TIMEOUT', 5),
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
@@ -60,6 +80,9 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_merge(
+                [
+                    $pdoMysqlConnectTimeoutKey => max(1, (int) env('DB_CONNECT_TIMEOUT', 5)),
+                ],
                 array_filter([
                     (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
                 ]),
@@ -84,6 +107,9 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_merge(
+                [
+                    $pdoMysqlConnectTimeoutKey => max(1, (int) env('DB_CONNECT_TIMEOUT', 5)),
+                ],
                 array_filter([
                     (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
                 ]),
@@ -108,9 +134,14 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') ? array_merge(
+                [
+                    $pdoMysqlConnectTimeoutKey => max(1, (int) env('DB_CONNECT_TIMEOUT', 5)),
+                ],
+                array_filter([
+                    (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                ]),
+            ) : [],
         ],
 
         'pgsql' => [

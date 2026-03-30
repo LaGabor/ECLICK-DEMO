@@ -1,5 +1,9 @@
 services:
   nginx:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
     image: nginx:1.27
     restart: unless-stopped
     ports:
@@ -11,6 +15,10 @@ services:
       - backend
 
   backend:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
     build:
       context: .
       dockerfile: docker/php/Dockerfile
@@ -25,13 +33,19 @@ services:
     env_file:
       - .env
     environment:
-      # .env uses host machine DB/mail; inside Compose use service names.
       DB_HOST: mysql
       DB_PORT: "3306"
       MAIL_HOST: mailpit
+      REFUND_EXPORT_QUEUE: refund-exports
+      # Browser URL for Filament (host + published port). Keeps signed refund-export links valid in email.
+      FILAMENT_PUBLIC_URL: http://admin.localhost:8080
     entrypoint: /var/www/php/docker/php/entrypoint.sh
 
   queue-worker-mail:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
     image: laravel-backend
     restart: unless-stopped
     working_dir: /var/www/php
@@ -48,10 +62,77 @@ services:
       DB_HOST: mysql
       DB_PORT: "3306"
       MAIL_HOST: mailpit
+      FILAMENT_PUBLIC_URL: http://admin.localhost:8080
+      DOCKER_QUEUE_NAME: mail
+      DOCKER_QUEUE_TIMEOUT: "120"
+      DOCKER_QUEUE_MEMORY: "256"
     entrypoint: ["/bin/sh", "/var/www/php/docker/php/wait-for-migrations.sh"]
     stop_grace_period: 60s
 
+  queue-worker-upload-pics:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
+    image: laravel-backend
+    restart: unless-stopped
+    working_dir: /var/www/php
+    volumes:
+      - ./:/var/www/php
+    depends_on:
+      mysql:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      MAIL_HOST: mailpit
+      IMAGE_UPLOAD_QUEUE: upload-pics
+      DOCKER_QUEUE_NAME: upload-pics
+      DOCKER_QUEUE_TIMEOUT: "300"
+      DOCKER_QUEUE_MEMORY: "512"
+      DOCKER_QUEUE_TRIES: "3"
+      DOCKER_QUEUE_BACKOFF: "15,30,180"
+    entrypoint: ["/bin/sh", "/var/www/php/docker/php/wait-for-migrations.sh"]
+    stop_grace_period: 120s
+
+  queue-worker-refund-exports:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
+    image: laravel-backend
+    restart: unless-stopped
+    working_dir: /var/www/php
+    volumes:
+      - ./:/var/www/php
+    depends_on:
+      mysql:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      MAIL_HOST: mailpit
+      REFUND_EXPORT_QUEUE: refund-exports
+      FILAMENT_PUBLIC_URL: http://admin.localhost:8080
+      DOCKER_QUEUE_NAME: refund-exports
+      DOCKER_QUEUE_TIMEOUT: "900"
+      DOCKER_QUEUE_MEMORY: "512"
+    entrypoint: ["/bin/sh", "/var/www/php/docker/php/wait-for-migrations.sh"]
+    stop_grace_period: 120s
+
   node:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
     image: node:22
     working_dir: /var/www/php
     ports:
@@ -64,6 +145,10 @@ services:
       CHOKIDAR_USEPOLLING: "false"
 
   mailpit:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
@@ -71,6 +156,10 @@ services:
       - "8025:8025"
 
   mysql:
+    deploy:
+      resources:
+        limits:
+          memory: 1gb
     image: mysql:8.4
     restart: unless-stopped
     environment:

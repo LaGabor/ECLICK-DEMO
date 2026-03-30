@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('promotion_product', function (Blueprint $table) {
-            $table->id();
             $table->foreignId('promotion_id')
                 ->constrained()
                 ->cascadeOnDelete();
@@ -22,7 +21,7 @@ return new class extends Migration
             $table->enum('refund_type', ['fixed', 'percent'])->default('fixed');
             $table->decimal('refund_value', 13, 4);
             $table->timestamps();
-            $table->unique(['promotion_id', 'product_id']);
+            $table->primary(['promotion_id', 'product_id']);
         });
     }
 

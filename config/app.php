@@ -59,6 +59,12 @@ return [
     'admin_domain' => env('FILAMENT_ADMIN_DOMAIN', 'admin.localhost'),
 
     /*
+    | Public base URL for the Filament admin as users open it in the browser (include port if any).
+    | Used when building signed refund-export download links in email so signatures stay valid.
+    */
+    'filament_public_url' => env('FILAMENT_PUBLIC_URL'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

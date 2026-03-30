@@ -16,8 +16,8 @@
 
         <div class="mt-4">
             <x-input-label for="phone" :value="__('Phone number')" />
-            <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" required autocomplete="tel" inputmode="tel" />
-            <p class="mt-1 text-xs text-gray-500">{{ __('Digits, spaces, +, -, and parentheses only.') }}</p>
+            <x-text-input id="phone" class="block mt-1 w-full font-mono" type="tel" name="phone" :value="old('phone')" required autocomplete="tel" inputmode="numeric" placeholder="+36300705352" pattern="\\+36[0-9]{9}" />
+            <p class="mt-1 text-xs text-gray-500">{{ __('messages.phone_hu_e164_hint') }}</p>
             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
         </div>
 

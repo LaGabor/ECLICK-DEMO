@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('upload_start')->nullable();
             $table->date('upload_end');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

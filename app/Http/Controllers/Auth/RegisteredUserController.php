@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\AuthPassword;
 use App\Support\UserRole;
+use App\Support\Validation\HungarianInternationalPhoneRules;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -29,10 +30,12 @@ class RegisteredUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:32', 'regex:/^[\d\s\-\+\(\)]+$/'],
+            'phone' => HungarianInternationalPhoneRules::requiredRules(),
             'bank_account' => ['required', 'string', 'max:64'],
             'password' => ['required', 'confirmed', AuthPassword::rule()],
             'terms_accepted' => ['accepted'],
+        ], [
+            'phone.regex' => __('messages.phone_hu_e164_invalid'),
         ]);
 
         if (User::query()

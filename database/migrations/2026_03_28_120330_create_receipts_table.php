@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('receipts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')
+            $table->foreignUuid('user_id')
                 ->constrained()
                 ->cascadeOnDelete();
             $table->foreignId('promotion_id')
@@ -25,13 +25,16 @@ return new class extends Migration
                 'approved',
                 'rejected',
                 'appealed',
+                'awaiting_user_information',
                 'payment_pending',
                 'paid',
                 'payment_failed',
             ])->default('pending');
             $table->text('admin_note')->nullable();
+            $table->text('appeal_message')->nullable();
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamp('paid_at')->nullable();
+            $table->timestamp('appeal_submitted_at')->nullable();
             $table->timestamps();
         });
     }

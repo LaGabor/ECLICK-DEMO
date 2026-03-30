@@ -1,58 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ECLICK-DEMO
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Telepítés (Docker)
 
-## About Laravel
+### Előfeltételek
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Telepített Docker + Docker Compose
+- A böngésződ tudja kezelni az **`admin.localhost`** domaint. Ha nem működik, add hozzá a hosts fájlhoz:
+  `127.0.0.1 admin.localhost`  
+  (Linux/macOS: `/etc/hosts`, Windows: `C:\Windows\System32\drivers\etc\hosts`).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Lépések
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. Környezeti fájl létrehozása:
 
-## Learning Laravel
+   ```bash
+   cp .env.example .env ( vagy csak manuálisan töröld ki a .example részt)
+    
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+   Docker alatt a `docker-compose.yml` a **backend** szolgáltatásnál felülírja a `DB_HOST`-ot `mysql`-re és a `MAIL_HOST`-ot `mailpit`-re; a `.env`-ben a példa **3308**-as host port a gépről való közvetlen MySQL-eléréshez készült.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+2. **PHP image buildelése** (Csak első indításkor vagy Dockerfile módosítás után szükséges.):
 
-## Agentic Development
+   ```bash
+   docker compose build
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+3. **Konténerek indítása**:
 
-```bash
-composer require laravel/boost --dev
+   ```bash
+   docker compose up
+   ```
 
-php artisan boost:install
+   A `backend` konténer induláskor futtatja a migrációkat és a seedereket (docker/php/entrypoint.sh kezeli).
+
+
+4. **Állítsd le** és ha szeretnéd **töröld a compose volume-okat** is (MySQL adat, `node_modules` volume stb. — **minden adat elvész**):
+
+   ```bash
+   docker compose down -v
+   ```
+---
+
+## Elérhető szolgáltatások
+
+| Szolgáltatás             | URL / port | Megjegyzés                                                                                     |
+|--------------------------|------------|------------------------------------------------------------------------------------------------|
+| **User oldal**           | http://localhost:8080/ | Felhasználói felület (nyugták feltöltése, profil, üzenetek) |
+| **Admin oldal**          | http://admin.localhost:8080/ | Admin felület (termékek, promók, nyugták kezelése, refundok)   |
+| **Frontend dev szerver** | http://localhost:5173/ | Vite (fejlesztéshez)                                                    |
+| **Mail UI**              | http://localhost:8025/ | Bejövő levelek megtekintése                                                                    |
+| **Mailpit SMTP**         | `localhost:1025` | Alkalmazás ezt használja (mailpit:1025)                                 |
+| **MySQL (hostról)**      | `127.0.0.1:3308` | Felhasználó: `laravel`, jelszó: `secret`                                    |
+
+### Demo belépési adatok
+
+| Szerep | E-mail | Jelszó |
+|--------|--------|--------|
+| User   | `user@test.com` | `admin123!` |
+| Admin  | `admin@test.com` | `admin123!` |
+
+A jelszó módosítható a SEED_DEMO_PASSWORD env változóval..
+
+---
+
+## Architektúra (fontosabb döntések)
+
+| Terület                | Döntés                                                                                 | Rövid indoklás                                                                                                                                                                          |
+|------------------------|----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Két Filament panel** | `admin`  és `account` külön hoston / útvonalakon                                       | Az admin felület és a felhasználói felület teljesen el van választva. Külön bejelentkezésük van, és külön jogosultságok vonatkoznak rájuk. Ez jól szemlélteti a multi-tenancy alapjait. |
+| **Domain + host**      | `APP_MAIN_DOMAIN` + `FILAMENT_ADMIN_DOMAIN` (pl. `localhost` / `admin.localhost`)      | A `bootstrap/app.php` és az nginx ugyanazon a 80-as porton különbözteti meg a kérések célját a `Host` fejléc alapján.                                                                   |
+| **Adatmodell**         | Promóciók, termékek, nyugták, tételek, visszatérítések, üzenetek                       | Egy nyugta egy promócióhoz és egy felhasználóhoz kötött; promóciók - termékek: (many to many) .                                                                                         |
+| **Üzleti logika**      | `App\Services\…`, `App\Contracts\…`, `App\Domain\…` (enumok, kivételek)                | A státuszokat enumokkal (pl. ReceiptSubmissionStatus) kezeljük, így típusbiztos és átlátható.                                                                                           |
+| **Háttérfolyamatok (queue)**  | `database` queue driver; külön worker konténerek (mail, képfeldolgozás, refund export) | A hosszabb feladatok (pl. e-mail küldés, képfeldolgozás, csv létrehozás + export) háttérben futnak. Egyszerű Docker setup.                                                              |
+| **E-mail kezelés**     | SMTP → Mailpit                                                                         |Fejlesztés közben minden kiküldött e-mail a Mailpit felületén nézhető meg, nem megy ki valódi címekre.                                                                                                                                            |
+| **Médiafeldolgozás**   | Feltöltés → staging → job → végleges  JPEG; MIME + raster ellenőrzés                   | A feltöltött képek először ideiglenes helyre kerülnek, majd egy háttérfolyamat dolgozza fel őket (pl. átméretezés, formátum ellenőrzés), így nem lassítják a felhasználói kérést.                                                                                                         |
+| **Jogosultságkezelés** | Laravel Policy-k + Filament + Spatie role (`UserRole`)                                 | Az admin és a sima felhasználók jogosultságai külön vannak kezelve, szerepkörök (pl. UserRole) alapján.                                                                                                                  |
+
+---
+
+## Nyugta feldolgozási folyamat
+
+Az egyes státuszok a `App\Domain\Receipts\ReceiptSubmissionStatus` enumnak felelnek meg.
+
+### Felhasználói oldal (beküldés és javítás)
+
+1. **pending** — A nyugta beérkezett, még nincs feldolgozva.
+2. **awaiting_user_information** — Az admin további adatokat kér; a résztvevő a szerkesztő oldalon menthet (megerősítő ablak után), majd a beküldés újra **pending** lesz.
+3. **payment_failed** — Sikertelen banki utalás; a résztvevő szerkesztheti a beküldést (és a profilban a bankszámlát). Mentés megerősítése után a státusz **pending**-re válik.
+4. **rejected** — Elutasítva; **nincs szerkesztés**, a résztvevő egyszer fellebbezhet (**appealed**).
+5. **appealed** — Fellebbezés elküldve; az admin újra megvizsgálhatja.
+
+### Admin / operátori folyamat 
+
+A ReceiptWorkflowService irányítja:
+
+- **pending**, **appealed** vagy **awaiting_user_information** → **under_review** („Move to under review”).
+- **under_review** → **approved** / **rejected** (indoklással) / **awaiting_user_information** (utasítással).
+- **approved** → ha bekerül egy refund export batch-be, a feldolgozás **payment_pending**-re állítja a nyugtát (és létrehozza a `refund_export_items` sorokat).
+- **payment_pending** → **paid** (manuális „transfer completed”) vagy **payment_failed** (manuális banki üzenet megadásával).
+- **payment_failed** → opcionálisan **awaiting_user_information** (résztvevői adatjavítás), vagy a résztvevő közvetlenül szerkeszt és ment → **pending**; onnan újra az értékelési kör.
+
+### Összefoglaló ábra (fő ágak)
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Beküldés
+    pending --> under_review: Admin feldolgozza
+    appealed --> under_review
+    awaiting_user_information --> pending: Javítás után
+
+    pending --> awaiting_user_information: Adatkérés
+    under_review --> approved
+    under_review --> rejected
+    under_review --> awaiting_user_information
+
+    rejected --> appealed: Fellebbezés
+
+    approved --> payment_pending
+    payment_pending --> paid
+    payment_pending --> payment_failed
+
+    payment_failed --> awaiting_user_information: Admin adatkérés
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+![mermaid-diagram.png](public/pics/mermaid-diagram.png)
 
-## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+> A pontos átmenetek és validációk mindig a `ReceiptWorkflowService` és a résztvevői `UserReceiptParticipantService` kódja szerint érvényesek.
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---

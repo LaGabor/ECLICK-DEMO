@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\User;
@@ -27,7 +29,7 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'phone' => fake()->unique()->e164PhoneNumber(),
+            'phone' => sprintf('+3620%07d', fake()->unique()->numberBetween(1_000_000, 9_999_999)),
             'bank_account' => fake()->unique()->numerify('################'),
             'email_verified_at' => now(),
             'terms_accepted_at' => now(),
@@ -43,6 +45,15 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function demoParticipant(int $slot): static
+    {
+        return $this->state(fn (array $_attributes): array => [
+            'email' => sprintf('seed-participant-%02d@demo.eclick.test', $slot),
+            'phone' => sprintf('+3620%07d', 1_000_000 + $slot),
+            'bank_account' => '11773090'.str_pad((string) (8_000_000 + $slot), 16, '0', STR_PAD_LEFT),
         ]);
     }
 }

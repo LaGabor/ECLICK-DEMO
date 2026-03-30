@@ -32,5 +32,6 @@
                 {{ $slot }}
             </main>
         </div>
+        @include('components.media-image-preview-modal')
     </body>
 </html>
