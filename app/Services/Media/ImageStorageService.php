@@ -107,14 +107,11 @@ final class ImageStorageService
             return;
         }
 
-        if ((string) $product->product_image !== $stagingRelativePath) {
-            Log::info('Product image finalize skipped (path changed).', [
+        if (!Storage::disk($this->diskName())->exists($stagingRelativePath)) {
+            Log::warning('Staging file missing, skipping finalize.', [
                 'product_id' => $productId,
-                'expected' => $stagingRelativePath,
-                'current' => $product->product_image,
+                'path' => $stagingRelativePath,
             ]);
-            $this->deleteIfOwned($stagingRelativePath, [$stagingPrefix]);
-
             return;
         }
 
@@ -160,18 +157,16 @@ final class ImageStorageService
             return;
         }
 
-        if ((string) $receipt->receipt_image !== $stagingRelativePath) {
-            Log::info('Receipt image finalize skipped (path changed).', [
-                'receipt_id' => $receiptId,
-                'expected' => $stagingRelativePath,
-                'current' => $receipt->receipt_image,
-            ]);
-            $this->deleteIfOwned($stagingRelativePath, [$stagingPrefix]);
+        $disk = Storage::disk($this->diskName());
 
+        if (! $disk->exists($stagingRelativePath)) {
+            Log::warning('Staging file missing, skipping finalize.', [
+                'receipt_id' => $receiptId,
+                'path' => $stagingRelativePath,
+            ]);
             return;
         }
 
-        $disk = Storage::disk($this->diskName());
         $stagingAbsolute = $disk->path($stagingRelativePath);
 
         $this->mimeValidator->assertFileIsAllowedRasterImage($stagingAbsolute);

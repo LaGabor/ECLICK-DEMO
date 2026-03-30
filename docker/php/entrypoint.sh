@@ -24,6 +24,15 @@ echo "Running migrations"
 php artisan migrate --force
 php artisan db:seed --force
 
+echo "Copying demo images into storage/public"
+mkdir -p storage/app/public/demo
+cp -f public/pics/product-pic.png storage/app/public/demo/product-pic.png
+cp -f public/pics/receipt-pic.jpg storage/app/public/demo/receipt-pic.jpg
+
+if [ ! -L public/storage ]; then
+  php artisan storage:link
+fi
+
 touch storage/framework/.docker_migrations_ready
 
 chown -R www-data:www-data storage bootstrap/cache
