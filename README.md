@@ -34,6 +34,7 @@ Docker alatt a `docker-compose.yml` a **backend** szolgáltatásnál felülírja
    docker compose up
    ```
 
+!!TODO BUG: Ha a feltöltött képek nem töltenek be akkor újra kell indítani a konténereket  docker compose down -v utána docker up!!
 
 4. **Állítsd le** és ha szeretnéd **töröld a compose volume-okat** is (MySQL adat, `node_modules` volume stb. — **minden adat elvész**):
 
