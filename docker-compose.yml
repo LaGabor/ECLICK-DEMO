@@ -12,7 +12,8 @@ services:
       - ./:/var/www/php
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   backend:
     deploy:
@@ -40,6 +41,16 @@ services:
       # Browser URL for Filament (host + published port). Keeps signed refund-export links valid in email.
       FILAMENT_PUBLIC_URL: http://admin.localhost:8080
     entrypoint: /var/www/php/docker/php/entrypoint.sh
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "test -f /var/www/php/storage/framework/.docker_migrations_ready && nc -z 127.0.0.1 9000",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 300s
 
   queue-worker-mail:
     deploy:
@@ -55,7 +66,7 @@ services:
       mysql:
         condition: service_healthy
       backend:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -83,7 +94,7 @@ services:
       mysql:
         condition: service_healthy
       backend:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -113,7 +124,7 @@ services:
       mysql:
         condition: service_healthy
       backend:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:

@@ -34,9 +34,6 @@ Docker alatt a `docker-compose.yml` a **backend** szolgáltatásnál felülírja
    docker compose up
    ```
 
-   A `backend` konténer induláskor futtatja a migrációkat és a seedereket (docker/php/entrypoint.sh kezeli).
-
-(ha 1. build után nem jönnek be a képek akkor docker compose down -v  docker compose up próba!)
 
 4. **Állítsd le** és ha szeretnéd **töröld a compose volume-okat** is (MySQL adat, `node_modules` volume stb. — **minden adat elvész**):
 
